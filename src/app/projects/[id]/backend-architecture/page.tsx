@@ -1,0 +1,368 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { 
+    ArrowLeft, 
+    Server, 
+    Database, 
+    Lock,
+    Zap,
+    GitBranch,
+    Box,
+    Layers,
+    Code,
+    FileJson,
+    Download,
+    ChevronRight,
+    Circle,
+    Loader2,
+    AlertCircle
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { fetchWithAuth } from '@/lib/api/fetchWithAuth';
+
+interface Service {
+    id: string;
+    name: string;
+    type: 'api' | 'service' | 'database' | 'cache' | 'queue' | 'auth';
+    description: string;
+    technologies: string[];
+    endpoints?: string[];
+    responsibilities: string[];
+}
+
+interface BackendArchitecture {
+    projectId: number;
+    services: Service[];
+    stats: {
+        totalServices: number;
+        authLayers: number;
+        cacheLayers: number;
+        messageQueues: number;
+    };
+}
+
+export default function BackendArchitecturePage() {
+    const params = useParams();
+    const projectId = params.id as string;
+
+    const [selectedService, setSelectedService] = useState<string | null>(null);
+    const [architecture, setArchitecture] = useState<BackendArchitecture | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchArchitecture = async () => {
+            setIsLoading(true);
+            setError(null);
+            try {
+                const res = await fetchWithAuth(`/projects/${projectId}/architecture/backend`, {
+                    method: 'GET',
+                });
+
+                if (!res.ok) {
+                    throw new Error('Failed to fetch backend architecture');
+                }
+
+                const data: BackendArchitecture = await res.json();
+                setArchitecture(data);
+                
+                // Set first service as selected by default
+                if (data.services.length > 0 && !selectedService) {
+                    setSelectedService(data.services[0].id);
+                }
+            } catch (err: any) {
+                setError(err.message || 'Failed to load architecture');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchArchitecture();
+    }, [projectId]);
+
+    const getServiceIcon = (type: string) => {
+        switch (type) {
+            case 'api': return <Server className="w-5 h-5" />;
+            case 'service': return <Box className="w-5 h-5" />;
+            case 'database': return <Database className="w-5 h-5" />;
+            case 'cache': return <Zap className="w-5 h-5" />;
+            case 'queue': return <GitBranch className="w-5 h-5" />;
+            case 'auth': return <Lock className="w-5 h-5" />;
+            default: return <Circle className="w-5 h-5" />;
+        }
+    };
+
+    const getServiceColor = (type: string) => {
+        switch (type) {
+            case 'api': return 'bg-blue-500/30 border-blue-500/50 text-foreground';
+            case 'service': return 'bg-purple-500/30 border-purple-500/50 text-foreground';
+            case 'database': return 'bg-green-500/30 border-green-500/50 text-foreground';
+            case 'cache': return 'bg-orange-500/30 border-orange-500/50 text-foreground';
+            case 'queue': return 'bg-pink-500/30 border-pink-500/50 text-foreground';
+            case 'auth': return 'bg-red-500/30 border-red-500/50 text-foreground';
+            default: return 'bg-gray-500/30 border-gray-500/50 text-foreground';
+        }
+    };
+
+    const getServiceIconColor = (type: string) => {
+        switch (type) {
+            case 'api': return 'text-blue-400';
+            case 'service': return 'text-purple-400';
+            case 'database': return 'text-green-400';
+            case 'cache': return 'text-orange-400';
+            case 'queue': return 'text-pink-400';
+            case 'auth': return 'text-red-400';
+            default: return 'text-gray-400';
+        }
+    };
+
+    const selectedServiceData = architecture?.services.find(s => s.id === selectedService);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading backend architecture...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !architecture) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center">
+                <div className="text-center max-w-md">
+                    <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-foreground mb-2">Failed to Load Architecture</h2>
+                    <p className="text-muted-foreground mb-4">{error || 'Unknown error occurred'}</p>
+                    <Link href={`/projects/${projectId}`}>
+                        <Button variant="outline">
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Back to Dashboard
+                        </Button>
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
+            {/* Background decorative elements */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-20 right-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
+                <div className="absolute bottom-40 left-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+            </div>
+
+            {/* Main Content */}
+            <div className="relative z-10 min-h-screen pt-24 px-4 sm:px-6 lg:px-8 pb-12">
+                <div className="max-w-7xl mx-auto">
+                    
+                    {/* Header */}
+                    <div className="mb-8 animate-in fade-in slide-in-from-top duration-700">
+                        <Link href={`/projects/${projectId}`}>
+                            <Button variant="ghost" size="sm" className="mb-4">
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                Back to Dashboard
+                            </Button>
+                        </Link>
+                        <div className="flex items-start justify-between">
+                            <div>
+                                <h1 className="text-5xl sm:text-6xl font-bold text-foreground mb-4">
+                                    Backend Architecture
+                                </h1>
+                                <p className="text-lg text-muted-foreground">
+                                    AI-generated microservices architecture and service design
+                                </p>
+                            </div>
+                            <Button variant="outline" size="sm">
+                                <Download className="w-4 h-4 mr-2" />
+                                Export
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Architecture Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 animate-in fade-in duration-700" style={{ animationDelay: '100ms' }}>
+                        <div className="bg-card border border-border rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Server className="w-4 h-4 text-blue-400" />
+                                <p className="text-xs text-muted-foreground">Services</p>
+                            </div>
+                            <p className="text-2xl font-bold text-foreground">{architecture.stats.totalServices}</p>
+                        </div>
+                        <div className="bg-card border border-border rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Lock className="w-4 h-4 text-red-400" />
+                                <p className="text-xs text-muted-foreground">Auth Layer</p>
+                            </div>
+                            <p className="text-2xl font-bold text-foreground">{architecture.stats.authLayers}</p>
+                        </div>
+                        <div className="bg-card border border-border rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Zap className="w-4 h-4 text-orange-400" />
+                                <p className="text-xs text-muted-foreground">Cache Layer</p>
+                            </div>
+                            <p className="text-2xl font-bold text-foreground">{architecture.stats.cacheLayers}</p>
+                        </div>
+                        <div className="bg-card border border-border rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-1">
+                                <GitBranch className="w-4 h-4 text-pink-400" />
+                                <p className="text-xs text-muted-foreground">Message Queue</p>
+                            </div>
+                            <p className="text-2xl font-bold text-foreground">{architecture.stats.messageQueues}</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        
+                        {/* Services List */}
+                        <div className="lg:col-span-2">
+                            <div className="bg-card border border-border rounded-xl p-6 animate-in fade-in duration-700" style={{ animationDelay: '200ms' }}>
+                                <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
+                                    <Layers className="w-5 h-5 text-primary" />
+                                    Microservices
+                                </h2>
+                                
+                                {/* Services Grid */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {architecture.services.map((service, index) => (
+                                        <div
+                                            key={service.id}
+                                            onClick={() => setSelectedService(service.id)}
+                                            className={`group cursor-pointer transition-all duration-300 animate-in fade-in zoom-in ${
+                                                selectedService === service.id 
+                                                    ? 'scale-105' 
+                                                    : 'hover:scale-105'
+                                            }`}
+                                            style={{ animationDelay: `${300 + index * 50}ms` }}
+                                        >
+                                            {/* Service Card */}
+                                            <div className={`p-6 rounded-lg border-2 transition-all duration-300 ${
+                                                getServiceColor(service.type)
+                                            } ${
+                                                selectedService === service.id 
+                                                    ? 'ring-2 ring-primary shadow-lg' 
+                                                    : ''
+                                            }`}>
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <div className={`p-2 bg-background/80 rounded ${getServiceIconColor(service.type)}`}>
+                                                        {getServiceIcon(service.type)}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h3 className="font-semibold text-base text-foreground">{service.name}</h3>
+                                                        <p className="text-sm text-muted-foreground capitalize">{service.type}</p>
+                                                    </div>
+                                                    <ChevronRight className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity text-foreground" />
+                                                </div>
+                                                <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
+                                                    {service.description}
+                                                </p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {service.technologies.slice(0, 3).map((tech, i) => (
+                                                        <span key={i} className="text-sm px-2 py-1 bg-background/60 rounded text-foreground border border-border">
+                                                            {tech}
+                                                        </span>
+                                                    ))}
+                                                    {service.technologies.length > 3 && (
+                                                        <span className="text-sm px-2 py-1 bg-background/60 rounded text-foreground border border-border">
+                                                            +{service.technologies.length - 3}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Service Details Panel */}
+                        <div className="lg:col-span-1">
+                            <div className="bg-card border border-border rounded-xl p-6 sticky top-24 animate-in fade-in slide-in-from-right duration-700" style={{ animationDelay: '300ms' }}>
+                                {selectedServiceData ? (
+                                    <>
+                                        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
+                                            <div className={`p-3 rounded-lg bg-background/80 border-2 ${getServiceColor(selectedServiceData.type).split(' ')[1]} ${getServiceIconColor(selectedServiceData.type)}`}>
+                                                {getServiceIcon(selectedServiceData.type)}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-base text-foreground">{selectedServiceData.name}</h3>
+                                                <p className="text-sm text-muted-foreground capitalize">{selectedServiceData.type}</p>
+                                            </div>
+                                        </div>
+
+                                        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                                            {selectedServiceData.description}
+                                        </p>
+
+                                        {/* Technologies */}
+                                        <div className="mb-6">
+                                            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                                <Code className="w-4 h-4" />
+                                                Technologies
+                                            </h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {selectedServiceData.technologies.map((tech, i) => (
+                                                    <span key={i} className="text-sm px-3 py-1.5 bg-primary/10 border border-primary/20 rounded text-primary">
+                                                        {tech}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Endpoints */}
+                                        {selectedServiceData.endpoints && selectedServiceData.endpoints.length > 0 && (
+                                            <div className="mb-6">
+                                                <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                                    <FileJson className="w-4 h-4" />
+                                                    API Endpoints
+                                                </h4>
+                                                <div className="space-y-2">
+                                                    {selectedServiceData.endpoints.map((endpoint, i) => (
+                                                        <div key={i} className="text-sm px-3 py-2 bg-secondary/50 rounded font-mono">
+                                                            {endpoint}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Responsibilities */}
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                                                <Layers className="w-4 h-4" />
+                                                Responsibilities
+                                            </h4>
+                                            <ul className="space-y-2">
+                                                {selectedServiceData.responsibilities.map((resp, i) => (
+                                                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2 leading-relaxed">
+                                                        <span className="text-primary mt-0.5">•</span>
+                                                        <span>{resp}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <Server className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                                        <p className="text-sm text-muted-foreground">
+                                            Click on a service to view details
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    );
+}
