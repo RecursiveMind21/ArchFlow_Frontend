@@ -53,6 +53,10 @@ interface TrackedRepo {
     defaultBranch: string;
 }
 
+interface TeamInfo {
+    currentUserRole: 'owner' | 'admin' | 'member' | null;
+}
+
 type PageState =
     | 'checking'
     | 'not-linked'
@@ -62,6 +66,7 @@ type PageState =
     | 'saving'
     | 'unlinking'
     | 'already-tracked'
+    | 'no-repo-member'
     | 'error';
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -73,6 +78,7 @@ export default function TrackRepositoryPage() {
     const projectId = params.id as string;
 
     const [state, setState] = useState<PageState>('checking');
+    const [userRole, setUserRole] = useState<'owner' | 'admin' | 'member'>('owner');
     const [linkStatus, setLinkStatus] = useState<LinkStatus | null>(null);
     const [repos, setRepos] = useState<Repo[]>([]);
     const [trackedRepo, setTrackedRepo] = useState<TrackedRepo | null>(null);
@@ -80,6 +86,8 @@ export default function TrackRepositoryPage() {
     const [search, setSearch] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
+
+    const isMember = userRole === 'member';
 
     // ── Actions (defined before use in useEffect) ───────────────────────────
 
@@ -106,10 +114,26 @@ export default function TrackRepositoryPage() {
             setError(null);
 
             try {
-                // 1. Is there already a tracked repo for this project?
-                //    200 → tracked repo returned
-                //    204 → none yet (empty body, don't call .json())
-                //    anything else → treat as "no repo, continue"
+                // 1. Determine the caller's role in the project's team (if any)
+                let role: 'owner' | 'admin' | 'member' = 'owner';
+                try {
+                    const teamRes = await fetchWithAuth(
+                        `/projects/${projectId}/team`,
+                        { method: 'GET' }
+                    );
+                    if (teamRes.ok) {
+                        const team: TeamInfo = await teamRes.json();
+                        if (team.currentUserRole === 'admin') role = 'admin';
+                        else if (team.currentUserRole === 'member') role = 'member';
+                    }
+                    // 204 (no team) or 403 (not a member) → keep default 'owner'
+                    // for solo projects. The backend will still gate writes.
+                } catch {
+                    // ignore — default to owner
+                }
+                setUserRole(role);
+
+                // 2. Is there already a tracked repo for this project?
                 const projectRepoRes = await fetchWithAuth(
                     `/projects/${projectId}/repository`,
                     { method: 'GET' }
@@ -124,7 +148,14 @@ export default function TrackRepositoryPage() {
                     }
                 }
 
-                // 2. Is the user linked to GitHub?
+                // 3. Member with no linked repo → show the "no repo yet" screen.
+                //    Members never get to pick a repo; only owners can link one.
+                if (role === 'member') {
+                    setState('no-repo-member');
+                    return;
+                }
+
+                // 4. Owner path: continue with the existing GitHub link flow
                 const statusRes = await fetchWithAuth('/github/status', {
                     method: 'GET',
                 });
@@ -136,13 +167,10 @@ export default function TrackRepositoryPage() {
                 const status: LinkStatus = await statusRes.json();
                 setLinkStatus(status);
 
-                // If the OAuth callback just returned with ?linked=true,
-                // jump straight to loading repos.
                 const justLinked = searchParams.get('linked') === 'true';
 
                 if (status.linked || justLinked) {
                     if (justLinked && !status.linked) {
-                        // Give the backend a moment to persist the link
                         await new Promise((r) => setTimeout(r, 500));
                         const refreshed = await fetchWithAuth('/github/status');
                         const refreshedStatus: LinkStatus = await refreshed.json();
@@ -168,8 +196,9 @@ export default function TrackRepositoryPage() {
         setState('linking');
         setError(null);
         try {
+            const returnTo = `/projects/${projectId}/track-repository`;
             const res = await fetchWithAuth(
-                `/projects/${projectId}/github/link`,
+                `/projects/${projectId}/github/link?returnTo=${encodeURIComponent(returnTo)}`,
                 { method: 'POST' }
             );
             if (!res.ok) throw new Error('Failed to start GitHub link flow');
@@ -234,9 +263,6 @@ export default function TrackRepositoryPage() {
             );
             if (!res.ok) throw new Error('Failed to unlink repository');
 
-            // Success — re-run the initial flow so the user lands on
-            // the "select a repository" screen (or "not linked" if
-            // they've also unlinked GitHub since).
             setTrackedRepo(null);
             setSelectedRepoId(null);
             await loadRepos();
@@ -282,6 +308,31 @@ export default function TrackRepositoryPage() {
                             Checking repository status...
                         </p>
                     </div>
+                </div>
+            </Shell>
+        );
+    }
+
+    // ── Member: no repo linked ──────────────────────────────────────────────
+
+    if (state === 'no-repo-member') {
+        return (
+            <Shell>
+                <BackButton />
+                <div className="max-w-2xl mx-auto pt-16 text-center">
+                    <div className="inline-flex p-5 bg-secondary border-2 border-border rounded-2xl mb-6">
+                        <GitBranch className="w-12 h-12 text-muted-foreground" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-foreground mb-3">
+                        No repository linked yet
+                    </h1>
+                    <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                        The project owner hasn't linked a GitHub repository to
+                        this project yet. It'll show up here once they do.
+                    </p>
+                    <Link href={`/projects/${projectId}`}>
+                        <Button variant="outline">Back to Dashboard</Button>
+                    </Link>
                 </div>
             </Shell>
         );
@@ -416,7 +467,9 @@ export default function TrackRepositoryPage() {
                             Tracked Repository
                         </h1>
                         <p className="text-lg text-muted-foreground">
-                            This project is linked to a GitHub repository.
+                            {isMember
+                                ? 'This project is linked to a GitHub repository.'
+                                : 'This project is linked to a GitHub repository.'}
                         </p>
                     </div>
 
@@ -452,22 +505,33 @@ export default function TrackRepositoryPage() {
                     </div>
 
                     <div className="flex gap-3 flex-wrap">
-                        <Button variant="outline" onClick={handleChangeRepo}>
-                            <RefreshCw className="w-4 h-4 mr-2" />
-                            Change Repository
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowUnlinkConfirm(true)}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
-                        >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Unlink Repository
-                        </Button>
+                        {!isMember && (
+                            <>
+                                <Button variant="outline" onClick={handleChangeRepo}>
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                    Change Repository
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowUnlinkConfirm(true)}
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Unlink Repository
+                                </Button>
+                            </>
+                        )}
                         <Link href={`/projects/${projectId}`}>
                             <Button>Back to Dashboard</Button>
                         </Link>
                     </div>
+
+                    {isMember && (
+                        <p className="mt-4 text-xs text-muted-foreground">
+                            Only the project owner can change or unlink the
+                            repository.
+                        </p>
+                    )}
 
                     {error && (
                         <div className="mt-6 p-4 bg-destructive/10 border border-destructive/30 rounded-lg flex items-start gap-3">
@@ -564,15 +628,15 @@ export default function TrackRepositoryPage() {
                                         key={repo.id}
                                         onClick={() => setSelectedRepoId(repo.id)}
                                         className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 ${isSelected
-                                                ? 'border-primary bg-primary/5 shadow-lg'
-                                                : 'border-border bg-card hover:border-primary/40'
+                                            ? 'border-primary bg-primary/5 shadow-lg'
+                                            : 'border-border bg-card hover:border-primary/40'
                                             }`}
                                     >
                                         <div className="flex items-start gap-3">
                                             <div
                                                 className={`mt-0.5 shrink-0 p-2 rounded ${isSelected
-                                                        ? 'bg-primary/20 text-primary'
-                                                        : 'bg-secondary text-muted-foreground'
+                                                    ? 'bg-primary/20 text-primary'
+                                                    : 'bg-secondary text-muted-foreground'
                                                     }`}
                                             >
                                                 <GitBranch className="w-4 h-4" />
@@ -715,7 +779,6 @@ function ConfirmModal({
     onConfirm,
     onCancel,
 }: ConfirmModalProps) {
-    // Close on Escape
     React.useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onCancel();
@@ -730,19 +793,17 @@ function ConfirmModal({
             role="dialog"
             aria-modal="true"
         >
-            {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in duration-150"
                 onClick={onCancel}
             />
 
-            {/* Card */}
             <div className="relative bg-card border border-border rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex items-start gap-4 mb-5">
                     <div
                         className={`p-3 rounded-lg shrink-0 ${confirmVariant === 'destructive'
-                                ? 'bg-destructive/15 text-destructive'
-                                : 'bg-primary/15 text-primary'
+                            ? 'bg-destructive/15 text-destructive'
+                            : 'bg-primary/15 text-primary'
                             }`}
                     >
                         <AlertCircle className="w-5 h-5" />
