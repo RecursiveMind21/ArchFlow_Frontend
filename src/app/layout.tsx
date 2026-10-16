@@ -1,11 +1,12 @@
-import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
-import Navbar from '@/components/Navbar'
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
+import './globals.css';
+import Navbar from '@/components/Navbar';
+import { ProfileGuard } from '@/components/ProfileGuard';
 
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
-const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
+const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' });
 
 export const metadata: Metadata = {
   title: 'ArchFlow - AI-Powered Software Engineering',
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
-}
+};
 
 export default function RootLayout({
   children,
@@ -29,9 +30,11 @@ export default function RootLayout({
     <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
       <body className="min-h-screen bg-background font-sans antialiased">
         <Navbar />
-        <main>{children}</main>
+        <main>
+          <ProfileGuard>{children}</ProfileGuard>
+        </main>
         <Analytics />
       </body>
     </html>
-  )
+  );
 }

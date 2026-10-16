@@ -1,291 +1,333 @@
 'use client';
 
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import {
+  ArrowRight,
+  Sparkles,
+  Server,
+  Layout,
+  Database,
+  Network,
+  Users,
+  Bot,
+  CheckCircle2,
+  Zap,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { getAccessToken } from '@/lib/auth/tokens';
 
-interface Card {
-  id: string;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}
+export default function LandingPage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-const featureCards: Card[] = [
-  {
-    id: '1',
-    icon: <span className="text-2xl">1</span>,
-    title: 'Conversational Requirement Engine',
-    description: 'AI converts natural discussions into structured functional and non-functional requirements.',
-  },
-  {
-    id: '2',
-    icon: <span className="text-2xl">2</span>,
-    title: 'Architecture Designer',
-    description: 'Generate system design, component boundaries, database schemas, and APIs.',
-  },
-  {
-    id: '3',
-    icon: <span className="text-2xl">3</span>,
-    title: 'Task Decomposer',
-    description: 'Break architecture into actionable backend, frontend, and DevOps tasks.',
-  },
-  {
-    id: '4',
-    icon: <span className="text-2xl">4</span>,
-    title: 'Traceability Engine',
-    description: 'Track every commit back to the original requirement.',
-  },
-];
+  useEffect(() => {
+    setMounted(true);
+    setIsLoggedIn(!!getAccessToken());
+  }, []);
 
-function CardComponent({ card, index }: { card: Card; index: number }) {
-  return (
-    <div
-      className="group relative animate-in fade-in zoom-in duration-500"
-      style={{ animationDelay: `${index * 100}ms` }}
-    >
-      <div className="absolute -inset-1 bg-linear-to-r from-foreground/5 to-foreground/10 rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-300" />
-      <div className="relative p-8 border border-border rounded-xl bg-card hover:bg-secondary/30 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer">
-        <div className="flex items-start justify-between mb-4">
-          <div className="w-10 h-10 rounded bg-primary/20 flex items-center justify-center text-primary font-bold group-hover:scale-110 transition-transform duration-300">
-            {card.icon}
-          </div>
-          <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        </div>
-        <h3 className="text-lg font-semibold text-card-foreground mb-2">
-          {card.title}
-        </h3>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {card.description}
-        </p>
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-export default function Page() {
   return (
-    <div className="w-full bg-background text-foreground">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-sm border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-sm flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">A</span>
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      {/* Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 right-10 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-40 left-10 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
+      </div>
+
+      {/* Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/70 backdrop-blur-xl animate-in fade-in slide-in-from-top duration-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-base">
+              A
             </div>
-            <span className="font-bold text-lg">ArchFlow</span>
+            <span className="font-bold text-xl">ArchFlow</span>
+          </Link>
+
+          <div className="hidden md:flex items-center gap-10 text-base">
+            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a>
+            <a href="#how" className="text-muted-foreground hover:text-foreground transition-colors">How it works</a>
+            <a href="#stack" className="text-muted-foreground hover:text-foreground transition-colors">Stack</a>
           </div>
-          <Button variant="outline" size="sm">
-            <Link href="/register">
-              Get Started Free
-            </Link>
-          </Button>
+
+          <div className="flex items-center gap-3 cursor-pointer">
+            {isLoggedIn ? (
+              <Link href="/dashboard">
+                <Button>
+                  Dashboard
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" className="cursor-pointer text-base">Sign in</Button>
+                </Link>
+                <Link href="/register">
+                  <Button className="cursor-pointer text-base">
+                    Get Started
+                    <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="mb-6 inline-block animate-in fade-in slide-in-from-top duration-500">
-            <span className="text-sm font-mono text-muted-foreground border border-border rounded-full px-4 py-2">
-              From Ideas to Code
-            </span>
+      {/* Hero */}
+      <section className="relative z-10 pt-36 pb-28 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-full text-primary text-base font-medium mb-10 animate-in fade-in slide-in-from-top duration-500">
+            <Sparkles className="w-4 h-4" />
+            AI-powered architecture generation
           </div>
 
-          <h1 className="text-5xl sm:text-6xl font-bold mb-6 leading-tight text-balance animate-in fade-in slide-in-from-top duration-500" style={{ animationDelay: '100ms' }}>
-            From Idea to Architecture.
-            <br />
-            <span className="text-muted-foreground">Structured by AI.</span>
+          <h1
+            className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-8 animate-in fade-in slide-in-from-top duration-500"
+            style={{ animationDelay: '100ms' }}
+          >
+            Turn your idea into a
+            <span className="block bg-gradient-to-r from-primary via-primary to-primary/60 bg-clip-text text-transparent">
+              production-ready blueprint
+            </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-top duration-500" style={{ animationDelay: '200ms' }}>
-            ArchFlow transforms raw product ideas into structured requirements, system architecture, actionable tasks, and traceable implementation workflows. Instead of scattered documents and disconnected tickets, you get a unified engineering system.
+          <p
+            className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-top duration-500"
+            style={{ animationDelay: '200ms' }}
+          >
+            {isLoggedIn
+              ? 'Your workspace is ready. Jump back in and pick up where you left off — or start something new.'
+              : 'ArchFlow transforms your project requirements into a full-stack architecture — backend services, frontend components, database schema, API design, and requirements docs. All generated by AI, in one workspace.'}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16 animate-in fade-in slide-in-from-top duration-500" style={{ animationDelay: '300ms' }}>
-            <Button asChild size="lg" className="text-base">
-              <Link href="/register">
-                Get Started Free
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" className="text-base">
-              See How It Works
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+          <div
+            className="flex items-center justify-center gap-4 flex-wrap mb-8 animate-in fade-in slide-in-from-top duration-500"
+            style={{ animationDelay: '300ms' }}
+          >
+            {isLoggedIn ? (
+              <>
+                <Button asChild size="lg" className="text-lg px-9 h-12">
+                  <Link href="/dashboard">
+                    Go to Dashboard
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="text-lg px-9 h-12">
+                  <Link href="/projects">View Projects</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild size="lg" className="text-lg px-9 h-12">
+                  <Link href="/register">
+                    Start Building Free
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className="text-lg px-9 h-12">
+                  <Link href="/login">Sign In</Link>
+                </Button>
+              </>
+            )}
           </div>
 
-          {/* Flow Diagram */}
-          <div className="relative mt-16 p-8 bg-card border border-border rounded-lg overflow-hidden animate-in fade-in zoom-in duration-500" style={{ animationDelay: '400ms' }}>
-            <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-2 bg-primary/10 border border-border rounded text-sm font-mono">Idea</span>
-              </div>
-              <ArrowRight className="w-4 h-4 text-muted-foreground hidden sm:block" />
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-2 bg-primary/10 border border-border rounded text-sm font-mono">Requirements</span>
-              </div>
-              <ArrowRight className="w-4 h-4 text-muted-foreground hidden sm:block" />
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-2 bg-primary/10 border border-border rounded text-sm font-mono">Architecture</span>
-              </div>
-              <ArrowRight className="w-4 h-4 text-muted-foreground hidden sm:block" />
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-2 bg-primary/10 border border-border rounded text-sm font-mono">Tasks</span>
-              </div>
-              <ArrowRight className="w-4 h-4 text-muted-foreground hidden sm:block" />
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-2 bg-primary/10 border border-border rounded text-sm font-mono">Commits</span>
-              </div>
-            </div>
-          </div>
+          <p
+            className="text-base text-muted-foreground animate-in fade-in slide-in-from-top duration-500"
+            style={{ animationDelay: '400ms' }}
+          >
+            {isLoggedIn
+              ? `Welcome back · ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`
+              : 'No credit card required · First architecture in under 5 minutes'}
+          </p>
         </div>
       </section>
 
-      {/* Problem Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 border-t border-border">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-8 text-center text-balance">
-            Stop Building in Chaos.
-          </h2>
-
-          <div className="bg-card border border-border rounded-lg p-8 sm:p-12">
-            <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-              Modern software development breaks down when structure breaks down. Requirements live in chat threads. Architecture lives in someone's head. Tasks drift from intent. Commits lose context. Over time, complexity increases and clarity disappears.
-            </p>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              ArchFlow solves this by creating a unified system where every decision is tracked, every component is documented, and every change is connected to its original purpose.
+      {/* Features */}
+      <section id="features" className="relative z-10 py-28 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-20 animate-in fade-in slide-in-from-top duration-500">
+            <h2 className="text-4xl sm:text-5xl font-bold mb-5">Everything you need to ship</h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+              From first commit to production, ArchFlow has the artifacts your team needs.
             </p>
           </div>
-        </div>
-      </section>
 
-      {/* Solution Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 border-t border-border">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-12 text-center text-balance">
-            AI That Understands Software Engineering.
-          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
+            {[
+              { icon: Server, title: 'Backend Architecture', desc: 'Complete microservices breakdown — services, technologies, endpoints, and responsibilities generated from your requirements.', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+              { icon: Layout, title: 'Frontend Architecture', desc: 'Component tree with pages, layouts, hooks, and utilities. Every component includes props, features, and file paths.', color: 'text-purple-400 bg-purple-500/10 border-purple-500/20' },
+              { icon: Database, title: 'Database Schema', desc: 'Normalized PostgreSQL tables with fields, constraints, and relationships. Export as SQL DDL or PDF.', color: 'text-green-400 bg-green-500/10 border-green-500/20' },
+              { icon: Network, title: 'API Design', desc: 'REST endpoints with request/response schemas and example calls. Export as OpenAPI 3.0 spec.', color: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
+              { icon: Users, title: 'Team Collaboration', desc: 'Invite team members with a shareable link. Assign tasks, update statuses, and chat with your team.', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+              { icon: Bot, title: 'AI Build Assistant', desc: 'Chat with an AI that already knows your project. Ask questions, get code, and refine your architecture.', color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20' },
+            ].map((feature, i) => (
+              <div
+                key={feature.title}
+                className="group relative animate-in fade-in zoom-in duration-500"
+                style={{ animationDelay: `${i * 80}ms` }}
+              >
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-300" />
 
-          <p className="text-lg text-muted-foreground text-center mb-12 leading-relaxed max-w-2xl mx-auto">
-            ArchFlow acts as an AI-powered engineering co-pilot. It extracts structured requirements from conversation, designs scalable architecture, decomposes systems into executable tasks, and maintains complete traceability across your workflow.
-          </p>
-
-          {/* Feature Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {featureCards.map((card, index) => (
-              <CardComponent key={card.id} card={card} index={index} />
+                <div className="relative h-full p-7 bg-card border border-border rounded-xl hover:bg-secondary/30 hover:border-primary/40 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                  <div className={`inline-flex p-3.5 rounded-lg border ${feature.color} mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                    <feature.icon className="w-7 h-7" />
+                  </div>
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <h3 className="text-xl font-bold">{feature.title}</h3>
+                    <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300 shrink-0 mt-1.5" />
+                  </div>
+                  <p className="text-base text-muted-foreground leading-relaxed">{feature.desc}</p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Traceability Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 border-t border-border">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-8 text-center text-balance">
-            Complete Traceability.
-            <br />
-            <span className="text-muted-foreground">Zero Drift.</span>
-          </h2>
-
-          <div className="bg-card border border-border rounded-lg p-8 sm:p-12 mb-12">
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Every requirement connects to architecture. Every architecture component connects to tasks. Every task connects to commits. You always know why a piece of code exists. This eliminates drift, maintains alignment, and ensures your codebase remains true to its original vision.
-            </p>
+      {/* How it works */}
+      <section id="how" className="relative z-10 py-28 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-20 animate-in fade-in slide-in-from-top duration-500">
+            <h2 className="text-4xl sm:text-5xl font-bold mb-5">How it works</h2>
+            <p className="text-xl text-muted-foreground leading-relaxed">Four steps from idea to deployable architecture.</p>
           </div>
 
-          {/* Traceability Flow */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center animate-in fade-in zoom-in duration-500" style={{ animationDelay: '0ms' }}>
-              <div className="mb-4 mx-auto w-16 h-16 rounded-lg bg-primary/20 flex items-center justify-center">
-                <CheckCircle2 className="w-8 h-8 text-primary" />
+          <div className="space-y-7">
+            {[
+              { num: '01', title: 'Describe your project', desc: 'Answer a guided set of questions about your product — target users, features, platform, expected scale.' },
+              { num: '02', title: 'AI generates everything', desc: 'ArchFlow produces backend, frontend, database, and API architectures plus a full requirements document.' },
+              { num: '03', title: 'Invite your team', desc: 'Share a join link. Members get their own dashboard with tasks assigned to them.' },
+              { num: '04', title: 'Build with AI at your side', desc: 'Chat with a build assistant that knows your full stack. Ask questions, get code, refine decisions.' },
+            ].map((step, i) => (
+              <div
+                key={step.num}
+                className="group relative animate-in fade-in slide-in-from-left duration-500"
+                style={{ animationDelay: `${i * 100}ms` }}
+              >
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/5 to-transparent rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-300" />
+                <div className="relative flex gap-7 p-7 bg-card border border-border rounded-xl hover:border-primary/40 transition-all duration-300">
+                  <div className="shrink-0 text-4xl font-bold text-primary/30 font-mono group-hover:text-primary/60 transition-colors duration-300">
+                    {step.num}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">{step.title}</h3>
+                    <p className="text-base text-muted-foreground leading-relaxed">{step.desc}</p>
+                  </div>
+                </div>
               </div>
-              <h3 className="font-semibold mb-2">Requirements</h3>
-              <p className="text-sm text-muted-foreground">Structured and documented</p>
-            </div>
-            <div className="text-center animate-in fade-in zoom-in duration-500" style={{ animationDelay: '100ms' }}>
-              <div className="mb-4 mx-auto w-16 h-16 rounded-lg bg-primary/20 flex items-center justify-center">
-                <CheckCircle2 className="w-8 h-8 text-primary" />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stack */}
+      <section id="stack" className="relative z-10 py-28 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-card border border-border rounded-2xl p-10 sm:p-14 animate-in fade-in zoom-in duration-700">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              <div>
+                <h2 className="text-3xl sm:text-4xl font-bold mb-5">Built for modern stacks</h2>
+                <p className="text-lg text-muted-foreground mb-7 leading-relaxed">
+                  ArchFlow understands Spring Boot, React, PostgreSQL, and the technologies your team actually uses. Every generated artifact follows real-world production patterns.
+                </p>
+                <ul className="space-y-4">
+                  {[
+                    'Spring Boot 3.x and Java 17/21',
+                    'React 18 and Next.js',
+                    'PostgreSQL with proper normalization',
+                    'REST APIs with OpenAPI export',
+                  ].map((item, i) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-3 text-base animate-in fade-in slide-in-from-left duration-500"
+                      style={{ animationDelay: `${300 + i * 60}ms` }}
+                    >
+                      <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                      <span className="text-muted-foreground">{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <h3 className="font-semibold mb-2">Architecture</h3>
-              <p className="text-sm text-muted-foreground">Designed and validated</p>
-            </div>
-            <div className="text-center animate-in fade-in zoom-in duration-500" style={{ animationDelay: '200ms' }}>
-              <div className="mb-4 mx-auto w-16 h-16 rounded-lg bg-primary/20 flex items-center justify-center">
-                <CheckCircle2 className="w-8 h-8 text-primary" />
+
+              <div className="grid grid-cols-2 gap-5">
+                {[
+                  { label: 'Services', value: '10+', icon: Server },
+                  { label: 'Endpoints', value: '30+', icon: Network },
+                  { label: 'Tables', value: '15+', icon: Database },
+                  { label: 'Components', value: '20+', icon: Layout },
+                ].map((stat, i) => (
+                  <div
+                    key={stat.label}
+                    className="group p-5 bg-secondary/40 border border-border rounded-lg hover:bg-secondary/60 hover:-translate-y-1 transition-all duration-300 animate-in fade-in zoom-in"
+                    style={{ animationDelay: `${400 + i * 80}ms` }}
+                  >
+                    <stat.icon className="w-6 h-6 text-primary mb-2.5 group-hover:scale-110 transition-transform duration-300" />
+                    <p className="text-3xl font-bold">{stat.value}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{stat.label}</p>
+                  </div>
+                ))}
               </div>
-              <h3 className="font-semibold mb-2">Implementation</h3>
-              <p className="text-sm text-muted-foreground">Traced and connected</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Final CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 border-t border-border">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl sm:text-5xl font-bold mb-4 text-balance">
-            Start Building With Structure.
-          </h2>
-
-          <p className="text-lg text-muted-foreground mb-8">
-            Free for individual developers.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="text-base">
-              Create Free Account
-            </Button>
-            <Button variant="outline" size="lg" className="text-base">
-              View Demo
-            </Button>
+      {/* CTA */}
+      <section className="relative z-10 py-28 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-2xl p-14 animate-in fade-in zoom-in duration-700">
+          <div className="inline-flex p-3.5 bg-primary/15 rounded-xl mb-7 animate-in fade-in zoom-in duration-500" style={{ animationDelay: '100ms' }}>
+            <Zap className="w-9 h-9 text-primary" />
           </div>
+          <h2 className="text-4xl sm:text-5xl font-bold mb-5 animate-in fade-in slide-in-from-top duration-500" style={{ animationDelay: '200ms' }}>
+            {isLoggedIn ? 'Start something new.' : 'Ready to ship faster?'}
+          </h2>
+          <p className="text-xl text-muted-foreground mb-9 max-w-2xl mx-auto leading-relaxed animate-in fade-in slide-in-from-top duration-500" style={{ animationDelay: '300ms' }}>
+            {isLoggedIn
+              ? 'Kick off a new project and get a full-stack architecture in minutes.'
+              : 'Start with a project description. Get a full-stack architecture in minutes.'}
+          </p>
+          <Button asChild size="lg" className="text-lg px-9 h-12 animate-in fade-in zoom-in duration-500" style={{ animationDelay: '400ms' }}>
+            <Link href={isLoggedIn ? '/create-project' : '/register'}>
+              Create Your First Project
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Link>
+          </Button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-12 px-4 sm:px-6 lg:px-8 bg-card/50">
+      <footer className="relative z-10 border-t border-border py-14 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-700">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-8">
-            <div>
-              <h4 className="font-semibold mb-4">Product</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition">Features</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Pricing</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Enterprise</a></li>
-              </ul>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-7">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">A</div>
+              <span className="font-semibold text-lg">ArchFlow</span>
             </div>
-            <div>
-              <h4 className="font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition">Docs</a></li>
-                <li><a href="#" className="hover:text-foreground transition">GitHub</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Blog</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition">About</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Status</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Contact</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground transition">Privacy</a></li>
-                <li><a href="#" className="hover:text-foreground transition">Terms</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-border pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p>&copy; 2025 ArchFlow. All rights reserved.</p>
-            <div className="flex gap-4">
-              <a href="#" className="hover:text-foreground transition">Twitter</a>
-              <a href="#" className="hover:text-foreground transition">GitHub</a>
-              <a href="#" className="hover:text-foreground transition">LinkedIn</a>
+            <p className="text-base text-muted-foreground">
+              © {new Date().getFullYear()} ArchFlow. All rights reserved.
+            </p>
+            <div className="flex gap-8 text-base text-muted-foreground">
+              <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+              <a href="#how" className="hover:text-foreground transition-colors">How it works</a>
+              {isLoggedIn ? (
+                <Link href="/dashboard" className="hover:text-foreground transition-colors">
+                  Dashboard
+                </Link>
+              ) : (
+                <Link href="/login" className="hover:text-foreground transition-colors">
+                  Sign in
+                </Link>
+              )}
             </div>
           </div>
         </div>

@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api/fetchWithAuth';
+import { exportBackendArchitecturePdf } from '@/lib/pdf/exportBackendArchitecture';
 
 interface Service {
     id: string;
@@ -179,9 +180,14 @@ export default function BackendArchitecturePage() {
                                     AI-generated microservices architecture and service design
                                 </p>
                             </div>
-                            <Button variant="outline" size="sm">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => architecture && exportBackendArchitecturePdf(architecture)}
+                                disabled={!architecture}
+                            >
                                 <Download className="w-4 h-4 mr-2" />
-                                Export
+                                Export PDF
                             </Button>
                         </div>
                     </div>

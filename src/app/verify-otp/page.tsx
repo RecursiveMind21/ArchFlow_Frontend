@@ -17,7 +17,6 @@ export default function VerifyOTPPage() {
     const [resendCountdown, setResendCountdown] = useState(0);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-    // ✅ Read pending email; redirect if missing
     useEffect(() => {
         const stored = localStorage.getItem('pendingEmail');
         if (!stored) {
@@ -68,7 +67,7 @@ export default function VerifyOTPPage() {
         try {
             await verifyOtp({ email, otp: otpCode });
             localStorage.removeItem('pendingEmail');
-            router.push('/dashboard'); // or /complete-profile if profileCompleted = false
+            router.push('/profile/setup');
         } catch (err: any) {
             setError(err.message ?? 'Invalid or expired OTP. Please try again.');
             setOtp(['', '', '', '']);

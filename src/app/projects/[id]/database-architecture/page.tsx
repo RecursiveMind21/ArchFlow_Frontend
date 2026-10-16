@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api/fetchWithAuth';
+import { exportDatabaseArchitecturePdf } from '@/lib/pdf/exportDatabaseArchitecture';
 
 interface Table {
     id: string;
@@ -181,9 +182,14 @@ export default function DatabaseArchitecturePage() {
                                     AI-generated database schema and relationships
                                 </p>
                             </div>
-                            <Button variant="outline" size="sm">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => architecture && exportDatabaseArchitecturePdf(architecture)}
+                                disabled={!architecture}
+                            >
                                 <Download className="w-4 h-4 mr-2" />
-                                Export SQL
+                                Export PDF
                             </Button>
                         </div>
                     </div>

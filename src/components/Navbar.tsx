@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { LogOut, LayoutDashboard, ChevronDown, Bell, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -26,8 +26,18 @@ function RoleBadge({ role }: { role: string }) {
 
 export default function Navbar() {
     const router = useRouter();
+    const pathname = usePathname();
     const { user, loading } = useAuth();
     const [dropdownOpen, setDropdownOpen] = useState(false);
+
+    // Routes that render their own full-page layout (landing, auth pages).
+    // The global Navbar is hidden here so it doesn't overlap with the
+    // page's own nav. Hooks are all called above — returning null below
+    // is safe and preserves hook order across every render.
+    const hideOn = ['/', '/login', '/register'];
+    if (hideOn.includes(pathname)) {
+        return null;
+    }
 
     const handleLogout = async () => {
         setDropdownOpen(false);
@@ -40,7 +50,7 @@ export default function Navbar() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
 
                 {/* Logo */}
-                <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     <div className="w-8 h-8 bg-primary rounded-sm flex items-center justify-center">
                         <span className="text-primary-foreground font-bold text-sm">A</span>
                     </div>
@@ -52,7 +62,7 @@ export default function Navbar() {
                     <div className="w-24 h-8 bg-muted rounded-lg animate-pulse" />
 
                 ) : user ? (
-                    // ─── AUTHENTICATED ── matches dashboard header style ───────
+                    // ─── AUTHENTICATED ───────────────────────────────────────
                     <div className="flex items-center gap-2">
 
                         {/* Dashboard Button */}
@@ -144,7 +154,7 @@ export default function Navbar() {
                     </div>
 
                 ) : (
-                    // ─── UNAUTHENTICATED ────────────────────────────────────────
+                    // ─── UNAUTHENTICATED ────────────────────────────────────
                     <div className="flex items-center gap-3">
                         <Link href="/login">
                             <Button variant="ghost" size="sm" className="text-sm">

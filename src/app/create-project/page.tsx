@@ -302,11 +302,10 @@ export default function CreateProjectPage() {
                                     <label className="block text-sm font-medium text-foreground mb-3">User Scale</label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         {[
-                                            // ✅ Matches UserScale.java (SMALL, MEDIUM, LARGE, MASSIVE)
+                                            // ✅ Matches UserScale.java (SMALL, MEDIUM, LARGE)
                                             { value: 'SMALL', label: 'Small', sub: '1 – 100 users' },
                                             { value: 'MEDIUM', label: 'Medium', sub: '100 – 10,000 users' },
-                                            { value: 'LARGE', label: 'Large', sub: '10,000 – 1,000,000 users' },
-                                            { value: 'MASSIVE', label: 'Massive', sub: '1,000,000+ users' },
+                                            { value: 'LARGE', label: 'Large', sub: '10,000+ users' },
                                         ].map((opt) => (
                                             <label key={opt.value} className={`flex items-start p-4 border border-border rounded-lg cursor-pointer transition-all duration-300 ${formData.userScale === opt.value ? 'bg-primary/10 border-primary shadow-lg shadow-primary/20' : 'hover:bg-secondary/50'}`}>
                                                 <input
@@ -493,12 +492,11 @@ export default function CreateProjectPage() {
                                         },
                                         {
                                             field: 'expectedTraffic', label: 'Expected Traffic',
-                                            // ✅ Matches ExpectedTraffic.java
+                                            // ✅ Matches ExpectedTraffic.java (LOW, MEDIUM, HIGH)
                                             options: [
                                                 ['LOW', 'Low (< 1K/day)'],
                                                 ['MEDIUM', 'Medium (1K – 100K/day)'],
-                                                ['HIGH', 'High (100K – 1M/day)'],
-                                                ['VERY_HIGH', 'Very High (1M+/day)'],
+                                                ['HIGH', 'High (100K+/day)'],
                                             ],
                                         },
                                         {

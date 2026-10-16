@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useRouter, useParams } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api/fetchWithAuth';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
     id: string;
@@ -23,7 +25,8 @@ export default function ProjectChatPage() {
         {
             id: '1',
             role: 'assistant',
-            content: 'Hello! I\'m your AI assistant. I can help you refine your project requirements, suggest features, and answer questions about your architecture. How can I assist you today?',
+            content:
+                "Hello! I'm your AI assistant. I can help you refine your project requirements, suggest features, and answer questions about your architecture. How can I assist you today?",
             timestamp: new Date(),
         },
     ]);
@@ -37,137 +40,11 @@ export default function ProjectChatPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const formatMessage = (content: string) => {
-        // Split content into lines
-        const lines = content.split('\n');
-        const elements: React.ReactElement[] = [];
-        let currentTable: string[][] = [];
-        let inTable = false;
-        let listItems: string[] = [];
-        let inList = false;
-
-        const flushTable = () => {
-            if (currentTable.length > 0) {
-                elements.push(
-                    <div key={`table-${elements.length}`} className="my-4 overflow-x-auto">
-                        <table className="min-w-full border-collapse border border-border">
-                            <thead>
-                                <tr className="bg-muted/50">
-                                    {currentTable[0].map((header, i) => (
-                                        <th key={i} className="border border-border px-3 py-2 text-left font-semibold text-xs">
-                                            {header.trim()}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentTable.slice(1).map((row, rowIndex) => (
-                                    <tr key={rowIndex} className="hover:bg-muted/30">
-                                        {row.map((cell, cellIndex) => (
-                                            <td key={cellIndex} className="border border-border px-3 py-2 text-xs">
-                                                {cell.trim()}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                );
-                currentTable = [];
-            }
-        };
-
-        const flushList = () => {
-            if (listItems.length > 0) {
-                elements.push(
-                    <ul key={`list-${elements.length}`} className="my-2 ml-4 space-y-1">
-                        {listItems.map((item, i) => (
-                            <li key={i} className="text-xs list-disc">{item}</li>
-                        ))}
-                    </ul>
-                );
-                listItems = [];
-            }
-        };
-
-        lines.forEach((line, index) => {
-            // Check for table rows (contains |)
-            if (line.includes('|') && line.split('|').length > 2) {
-                if (!inTable) {
-                    flushList();
-                    inTable = true;
-                }
-                // Skip separator lines (|---|---|)
-                if (!line.match(/^\s*\|[\s\-:]+\|/)) {
-                    const cells = line.split('|').filter(cell => cell.trim() !== '');
-                    currentTable.push(cells);
-                }
-            } else {
-                if (inTable) {
-                    flushTable();
-                    inTable = false;
-                }
-
-                // Check for list items (starts with • or -)
-                if (line.trim().match(/^[•\-\*]\s+/)) {
-                    if (!inList) {
-                        inList = true;
-                    }
-                    listItems.push(line.trim().replace(/^[•\-\*]\s+/, ''));
-                } else {
-                    if (inList) {
-                        flushList();
-                        inList = false;
-                    }
-
-                    // Check for headers (###, ##, #)
-                    if (line.trim().startsWith('###')) {
-                        elements.push(
-                            <h3 key={index} className="text-base font-bold mt-4 mb-2">
-                                {line.replace(/^###\s*/, '')}
-                            </h3>
-                        );
-                    } else if (line.trim().startsWith('##')) {
-                        elements.push(
-                            <h2 key={index} className="text-lg font-bold mt-5 mb-3">
-                                {line.replace(/^##\s*/, '')}
-                            </h2>
-                        );
-                    } else if (line.trim().startsWith('#')) {
-                        elements.push(
-                            <h1 key={index} className="text-xl font-bold mt-6 mb-3">
-                                {line.replace(/^#\s*/, '')}
-                            </h1>
-                        );
-                    } else if (line.trim().startsWith('---')) {
-                        elements.push(<hr key={index} className="my-4 border-border" />);
-                    } else if (line.trim() === '') {
-                        elements.push(<div key={index} className="h-2" />);
-                    } else {
-                        // Regular text with bold support
-                        const formattedLine = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-                        elements.push(
-                            <p key={index} className="text-xs leading-relaxed" dangerouslySetInnerHTML={{ __html: formattedLine }} />
-                        );
-                    }
-                }
-            }
-        });
-
-        // Flush any remaining table or list
-        flushTable();
-        flushList();
-
-        return <div className="space-y-1">{elements}</div>;
-    };
-
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
 
     useEffect(() => {
-        // Fetch project details to get the name
         const fetchProject = async () => {
             try {
                 const res = await fetchWithAuth(`/projects/${projectId}`, { method: 'GET' });
@@ -206,28 +83,29 @@ export default function ProjectChatPage() {
                 }),
             });
 
-            if (!res.ok) {
-                throw new Error('Failed to send message');
-            }
+            if (!res.ok) throw new Error('Failed to send message');
 
             const aiResponse = await res.text();
 
-            const assistantMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: aiResponse,
-                timestamp: new Date(),
-            };
-
-            setMessages((prev) => [...prev, assistantMessage]);
-        } catch (err: any) {
-            const errorMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: 'Sorry, I encountered an error. Please try again.',
-                timestamp: new Date(),
-            };
-            setMessages((prev) => [...prev, errorMessage]);
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: aiResponse,
+                    timestamp: new Date(),
+                },
+            ]);
+        } catch {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: 'Sorry, I encountered an error. Please try again.',
+                    timestamp: new Date(),
+                },
+            ]);
         } finally {
             setIsSending(false);
         }
@@ -239,7 +117,6 @@ export default function ProjectChatPage() {
         const confirmComplete = window.confirm(
             'Are you sure you want to complete the requirements? This will finalize your project setup.'
         );
-
         if (!confirmComplete) return;
 
         setIsCompleting(true);
@@ -249,26 +126,24 @@ export default function ProjectChatPage() {
                 method: 'POST',
             });
 
-            if (!res.ok) {
-                throw new Error('Failed to complete requirements');
-            }
+            if (!res.ok) throw new Error('Failed to complete requirements');
 
             const response = await res.text();
 
-            const completionMessage: Message = {
-                id: Date.now().toString(),
-                role: 'assistant',
-                content: response,
-                timestamp: new Date(),
-            };
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content: response,
+                    timestamp: new Date(),
+                },
+            ]);
 
-            setMessages((prev) => [...prev, completionMessage]);
-
-            // Redirect to project dashboard after a short delay
             setTimeout(() => {
                 router.push(`/projects/${projectId}`);
             }, 2000);
-        } catch (err: any) {
+        } catch {
             alert('Failed to complete requirements. Please try again.');
         } finally {
             setIsCompleting(false);
@@ -287,24 +162,28 @@ export default function ProjectChatPage() {
             <div className="relative z-10 pt-24 px-4 sm:px-6 lg:px-8 flex-shrink-0">
                 <div className="max-w-4xl mx-auto">
                     <div className="bg-card border border-border rounded-t-xl p-4 shadow-lg">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                            <div className="flex items-center gap-3 min-w-0">
                                 <Link href="/projects">
                                     <Button variant="ghost" size="sm">
                                         <ArrowLeft className="w-4 h-4 mr-1" />
                                         Back
                                     </Button>
                                 </Link>
-                                <div>
-                                    <h1 className="text-xl font-bold text-foreground">{projectName}</h1>
-                                    <p className="text-sm text-muted-foreground">AI Requirements Assistant</p>
+                                <div className="min-w-0">
+                                    <h1 className="text-xl font-bold text-foreground truncate">
+                                        {projectName}
+                                    </h1>
+                                    <p className="text-sm text-muted-foreground">
+                                        AI Requirements Assistant
+                                    </p>
                                 </div>
                             </div>
                             <Button
                                 onClick={handleComplete}
                                 disabled={isCompleting}
                                 size="sm"
-                                className="flex items-center gap-2"
+                                className="flex items-center gap-2 shrink-0"
                             >
                                 {isCompleting ? (
                                     <>
@@ -326,68 +205,32 @@ export default function ProjectChatPage() {
             {/* Chat Messages */}
             <div className="relative z-10 flex-1 px-4 sm:px-6 lg:px-8 overflow-hidden">
                 <div className="max-w-4xl mx-auto h-full flex flex-col">
-                    <div className="flex-1 bg-card border-x border-border overflow-y-auto p-6 space-y-4 min-h-0">
+                    <div className="flex-1 bg-card border-x border-border overflow-y-auto p-4 sm:p-6 space-y-5 min-h-0">
                         {messages.map((message) => (
-                            <div
-                                key={message.id}
-                                className={`flex gap-3 animate-in fade-in slide-in-from-bottom duration-300 ${
-                                    message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                                }`}
-                            >
-                                {/* Avatar */}
-                                <div
-                                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                                        message.role === 'user'
-                                            ? 'bg-primary text-primary-foreground'
-                                            : 'bg-secondary text-secondary-foreground'
-                                    }`}
-                                >
-                                    {message.role === 'user' ? (
-                                        <User className="w-4 h-4" />
-                                    ) : (
-                                        <Bot className="w-4 h-4" />
-                                    )}
-                                </div>
-
-                                {/* Message Content */}
-                                <div
-                                    className={`flex-1 max-w-[85%] ${
-                                        message.role === 'user' ? 'text-right' : 'text-left'
-                                    }`}
-                                >
-                                    <div
-                                        className={`inline-block px-4 py-3 rounded-lg ${
-                                            message.role === 'user'
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-secondary text-secondary-foreground'
-                                        }`}
-                                    >
-                                        <div className="text-sm whitespace-pre-wrap break-words prose prose-sm dark:prose-invert max-w-none">
-                                            {formatMessage(message.content)}
-                                        </div>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-1 px-1">
-                                        {message.timestamp.toLocaleTimeString([], {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        })}
-                                    </p>
-                                </div>
-                            </div>
+                            <MessageBubble key={message.id} message={message} />
                         ))}
 
                         {/* Typing Indicator */}
                         {isSending && (
                             <div className="flex gap-3 animate-in fade-in duration-300">
-                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary text-secondary-foreground flex items-center justify-center">
+                                <div className="flex-shrink-0 w-9 h-9 rounded-lg bg-secondary text-secondary-foreground flex items-center justify-center border border-border">
                                     <Bot className="w-4 h-4" />
                                 </div>
                                 <div className="flex-1">
-                                    <div className="inline-block px-4 py-3 rounded-lg bg-secondary">
+                                    <div className="inline-block px-4 py-3 rounded-2xl rounded-tl-sm bg-secondary/60 border border-border">
                                         <div className="flex gap-1">
-                                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                            <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                            <div
+                                                className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                                                style={{ animationDelay: '0ms' }}
+                                            />
+                                            <div
+                                                className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                                                style={{ animationDelay: '150ms' }}
+                                            />
+                                            <div
+                                                className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
+                                                style={{ animationDelay: '300ms' }}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -406,7 +249,7 @@ export default function ProjectChatPage() {
                                 onChange={(e) => setInputMessage(e.target.value)}
                                 placeholder="Type your message..."
                                 disabled={isSending}
-                                className="flex-1 px-4 py-3 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 disabled:opacity-50"
+                                className="flex-1 px-4 py-3 text-base bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 disabled:opacity-50"
                             />
                             <Button
                                 type="submit"
@@ -421,12 +264,171 @@ export default function ProjectChatPage() {
                                 )}
                             </Button>
                         </form>
-                        <p className="text-xs text-muted-foreground mt-2 text-center">
+                        <p className="text-sm text-muted-foreground mt-2 text-center">
                             Ask questions about your project, request feature suggestions, or refine requirements
                         </p>
                     </div>
                 </div>
             </div>
+        </div>
+    );
+}
+
+// ─── Message Bubble ─────────────────────────────────────────────────────────
+
+function MessageBubble({ message }: { message: Message }) {
+    const isUser = message.role === 'user';
+    const time = message.timestamp.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+
+    return (
+        <div
+            className={`flex gap-3 animate-in fade-in slide-in-from-bottom duration-300 ${isUser ? 'flex-row-reverse' : 'flex-row'
+                }`}
+        >
+            {/* Avatar */}
+            <div
+                className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center border ${isUser
+                        ? 'bg-primary/15 border-primary/30 text-primary'
+                        : 'bg-secondary/60 border-border text-secondary-foreground'
+                    }`}
+            >
+                {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+            </div>
+
+            {/* Content */}
+            <div
+                className={`flex-1 min-w-0 max-w-[85%] ${isUser ? 'flex flex-col items-end' : ''
+                    }`}
+            >
+                <div
+                    className={`inline-block rounded-2xl px-4 py-3 ${isUser
+                            ? 'bg-primary text-primary-foreground rounded-tr-sm'
+                            : 'bg-secondary/60 text-foreground border border-border rounded-tl-sm'
+                        }`}
+                >
+                    {isUser ? (
+                        <p className="text-base leading-relaxed whitespace-pre-wrap break-words">
+                            {message.content}
+                        </p>
+                    ) : (
+                        <MarkdownContent content={message.content} />
+                    )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5 px-1">{time}</p>
+            </div>
+        </div>
+    );
+}
+
+// ─── Markdown Renderer ──────────────────────────────────────────────────────
+
+function MarkdownContent({ content }: { content: string }) {
+    return (
+        <div className="text-base leading-relaxed">
+            <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                    h1: ({ children }) => (
+                        <h1 className="text-xl font-bold mt-5 mb-2 first:mt-0">
+                            {children}
+                        </h1>
+                    ),
+                    h2: ({ children }) => (
+                        <h2 className="text-lg font-bold mt-4 mb-2 first:mt-0">
+                            {children}
+                        </h2>
+                    ),
+                    h3: ({ children }) => (
+                        <h3 className="text-base font-semibold mt-3 mb-1.5 first:mt-0">
+                            {children}
+                        </h3>
+                    ),
+                    p: ({ children }) => (
+                        <p className="my-2 first:mt-0 last:mb-0 leading-relaxed">
+                            {children}
+                        </p>
+                    ),
+                    ul: ({ children }) => (
+                        <ul className="my-2 space-y-1 list-disc pl-5">{children}</ul>
+                    ),
+                    ol: ({ children }) => (
+                        <ol className="my-2 space-y-1 list-decimal pl-5">
+                            {children}
+                        </ol>
+                    ),
+                    li: ({ children }) => (
+                        <li className="leading-relaxed">{children}</li>
+                    ),
+                    code: ({ className, children, ...props }) => {
+                        const isBlock = className?.includes('language-');
+                        if (isBlock) {
+                            return (
+                                <code className={className} {...props}>
+                                    {children}
+                                </code>
+                            );
+                        }
+                        return (
+                            <code
+                                className="px-1.5 py-0.5 rounded bg-background/80 border border-border font-mono text-[0.9em]"
+                                {...props}
+                            >
+                                {children}
+                            </code>
+                        );
+                    },
+                    pre: ({ children }) => (
+                        <pre className="my-3 p-3 rounded-lg bg-background border border-border overflow-x-auto text-sm">
+                            {children}
+                        </pre>
+                    ),
+                    a: ({ href, children }) => (
+                        <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                        >
+                            {children}
+                        </a>
+                    ),
+                    strong: ({ children }) => (
+                        <strong className="font-semibold">{children}</strong>
+                    ),
+                    em: ({ children }) => <em className="italic">{children}</em>,
+                    blockquote: ({ children }) => (
+                        <blockquote className="my-3 pl-3 border-l-2 border-primary/40 text-muted-foreground italic">
+                            {children}
+                        </blockquote>
+                    ),
+                    hr: () => <hr className="my-4 border-border" />,
+                    table: ({ children }) => (
+                        <div className="my-3 overflow-x-auto">
+                            <table className="w-full text-sm border border-border rounded-lg overflow-hidden">
+                                {children}
+                            </table>
+                        </div>
+                    ),
+                    thead: ({ children }) => (
+                        <thead className="bg-secondary/60">{children}</thead>
+                    ),
+                    th: ({ children }) => (
+                        <th className="text-left px-3 py-2 font-semibold border-b border-border">
+                            {children}
+                        </th>
+                    ),
+                    td: ({ children }) => (
+                        <td className="px-3 py-2 border-b border-border/50">
+                            {children}
+                        </td>
+                    ),
+                }}
+            >
+                {content}
+            </ReactMarkdown>
         </div>
     );
 }

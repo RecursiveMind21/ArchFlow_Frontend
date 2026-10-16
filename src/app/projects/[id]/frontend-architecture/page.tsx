@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api/fetchWithAuth';
+import { exportFrontendArchitecturePdf } from '@/lib/pdf/exportFrontendArchitecture';
 
 interface Component {
     id: string;
@@ -177,9 +178,14 @@ export default function FrontendArchitecturePage() {
                                     AI-generated component structure and frontend design
                                 </p>
                             </div>
-                            <Button variant="outline" size="sm">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => architecture && exportFrontendArchitecturePdf(architecture)}
+                                disabled={!architecture}
+                            >
                                 <Download className="w-4 h-4 mr-2" />
-                                Export
+                                Export PDF
                             </Button>
                         </div>
                     </div>

@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { fetchWithAuth } from '@/lib/api/fetchWithAuth';
+import { exportApiDesignPdf, exportApiDesignOpenApi } from '@/lib/pdf/exportApiDesign';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -280,10 +281,26 @@ export default function ApiDesignPage() {
                                     AI-generated REST endpoints, schemas and request/response contracts
                                 </p>
                             </div>
-                            <Button variant="outline" size="sm">
-                                <Download className="w-4 h-4 mr-2" />
-                                Export OpenAPI
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => exportApiDesignOpenApi(design)}
+                                    disabled={!design}
+                                >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Export OpenAPI
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => design && exportApiDesignPdf(design)}
+                                    disabled={!design}
+                                >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    Export PDF
+                                </Button>
+                            </div>
                         </div>
                     </div>
 
